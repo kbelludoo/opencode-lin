@@ -1,0 +1,34 @@
+@LIN:L1c:0.1
+^schema_once ^lossy=true ^ops=lin_core
+~G{?=if #=for ^=ret :else}
+
+TARGET:{prefer:ts,require:ts}
+
+!isBlank(v){;?(v==null){^1};s=String(v);?(s==''||s=='undefined'||s=='null'){^1};^0}
+!isObj(v){;?(v==null){^0};s=String(v);?(s=='[object Object]'){^1};^0}
+!isList(v){;?(v==null){^0};?(v.join){^1};^0}
+!listHas(list,name){;arr=list||[];#(i=0;i<arr.length;i++){?(String(arr[i])==name){^1}};^0}
+
+!mkSymbol(name,kind,mod,deps,effects,sig){^({name:name,kind:kind,module:mod,deps:deps||[],effects:effects||[],signature:sig||''})}
+!mkModule(path,syms,imports,effs,h){^({path:path,symbols:syms||[],imports:imports||[],effects:effs||[],hash:h||''})}
+!mkIndex(){^({modules:{},symbolToModules:{},moduleDeps:{},semanticHashes:{}})}
+
+!indexAddModule(idx,mod){;idx.modules[mod.path]=mod;idx.semanticHashes[mod.path]=mod.hash;#(s=0;s<mod.symbols.length;s++){sym=mod.symbols[s];?(idx.symbolToModules[sym.name]==null){idx.symbolToModules[sym.name]=[]};idx.symbolToModules[sym.name].push(mod.path)};idx.moduleDeps[mod.path]=mod.imports;^idx}
+
+!indexQuerySymbol(idx,name){;mods=idx.symbolToModules[name];?(mods==null){^null};results=[];#(m=0;m<mods.length;m++){mod=idx.modules[mods[m]];?(mod==null){continue};#(s=0;s<mod.symbols.length;s++){?(mod.symbols[s].name==name){results.push(mod.symbols[s])}}};?(results.length==0){^null};^results}
+
+!indexDependencies(idx,target){;deps=idx.moduleDeps[target];?(deps!=null){^deps};mods=idx.symbolToModules[target];?(mods==null){^null};all=[];#(m=0;m<mods.length;m++){md=idx.moduleDeps[mods[m]]||[];#(d=0;d<md.length;d++){has=0;#(a=0;a<all.length;a++){?(all[a]==md[d]){has=1}};?(has==0){all.push(md[d])}}};^all}
+
+!indexEffects(idx,target){;mod=idx.modules[target];?(mod!=null){^mod.effects};mods=idx.symbolToModules[target];?(mods==null){^null};all=[];#(m=0;m<mods.length;m++){md=idx.modules[mods[m]];?(md==null){continue};#(e=0;e<md.effects.length;e++){has=0;#(a=0;a<all.length;a++){?(all[a]==md.effects[e]){has=1}};?(has==0){all.push(md.effects[e])}}};^all}
+
+!semanticDiff(oldSrc,newSrc,oldPath,newPath){;oldSyms=extractSymbols(oldSrc,oldPath||'<old>');newSyms=extractSymbols(newSrc,newPath||'<new>');oldNames=[];#(i=0;i<oldSyms.length;i++){oldNames.push(oldSyms[i].name)};newNames=[];#(i=0;i<newSyms.length;i++){newNames.push(newSyms[i].name)};added=[];#(i=0;i<newSyms.length;i++){has=0;#(j=0;j<oldNames.length;j++){?(oldNames[j]==newSyms[i].name){has=1}};?(has==0){added.push(newSyms[i])}};removed=[];#(i=0;i<oldSyms.length;i++){has=0;#(j=0;j<newNames.length;j++){?(newNames[j]==oldSyms[i].name){has=1}};?(has==0){removed.push(oldSyms[i])}};changed=[];#(i=0;i<newSyms.length;i++){#(j=0;j<oldSyms.length;j++){?(newSyms[i].name==oldSyms[j].name&&(newSyms[i].kind!=oldSyms[j].kind)){changed.push({name:newSyms[i].name,from:oldSyms[j].kind,to:newSyms[i].kind})}}};^({added:added,removed:removed,changed:changed})}
+
+!extractSymbols(code,modPath){;syms=[];s=String(code);re1=/export\s+(?:async\s+)?function\s+(\w+)/g;re2=/export\s+class\s+(\w+)/g;re3=/export\s+(?:type|interface)\s+(\w+)/g;re4=/export\s+(?:const|let|var)\s+(\w+)/g;m=re1.exec(s);while(m!=null){syms.push(mkSymbol(m[1],'function',modPath,[],[],''));m=re1.exec(s)};m=re2.exec(s);while(m!=null){syms.push(mkSymbol(m[1],'class',modPath,[],[],''));m=re2.exec(s)};m=re3.exec(s);while(m!=null){syms.push(mkSymbol(m[1],'type',modPath,[],[],''));m=re3.exec(s)};m=re4.exec(s);while(m!=null){syms.push(mkSymbol(m[1],'variable',modPath,[],[],''));m=re4.exec(s)};^syms}
+
+!stats(idx){;keys=Object.keys(idx.modules);symCount=0;effCount=0;#(i=0;i<keys.length;i++){mod=idx.modules[keys[i]];symCount=symCount+mod.symbols.length;effCount=effCount+mod.effects.length};^({modules:keys.length,symbols:symCount,effects:effCount})}
+
+!verifyIdx(idx){;drift=[];keys=Object.keys(idx.semanticHashes);#(i=0;i<keys.length;i++){path=keys[i];stored=idx.semanticHashes[path];?(stored==null){drift.push({path:path,expected:null,status:'unindexed'})}};^({ok:drift.length==0,drift:drift})}
+
+!compileTarget(target,modPath,idx){;mod=idx.modules[modPath];?(mod==null){^({ok:0,error:'Module not indexed: '+modPath})};^({ok:1,target:target,module:modPath,hash:mod.hash,symbols:mod.symbols.length,note:'heuristic mode'})}
+
+=indexAddModule,indexQuerySymbol,indexDependencies,indexEffects,semanticDiff,extractSymbols,stats,verifyIdx,compileTarget,isBlank,isObj,isList,listHas,mkSymbol,mkModule,mkIndex

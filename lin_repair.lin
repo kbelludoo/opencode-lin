@@ -1,0 +1,35 @@
+@LIN:L1c:0.1
+^schema_once ^lossy=true ^ops=lin_repair
+~G{?=if #=for ^=ret :else}
+
+TARGET:{prefer:ts,require:ts}
+
+!isBlank(v){;?(v==null){^1};s=String(v);?(s==''||s=='undefined'||s=='null'){^1};^0}
+
+!classifyA(errorText){;s=String(errorText).toLowerCase();?(s.indexOf('syntax')>=0){^({cls:'A',reason:'syntax_error',suggestion:'Parse and fix token'})};?(s.indexOf('cannot find module')>=0){^({cls:'A',reason:'missing_import',suggestion:'Add missing import'})};?(s.indexOf('module not found')>=0){^({cls:'A',reason:'missing_import',suggestion:'Add missing import'})};?(s.indexOf('is not assignable')>=0){^({cls:'A',reason:'type_error',suggestion:'Fix type annotation'})};?(s.indexOf('unexpected token')>=0){^({cls:'A',reason:'syntax_error',suggestion:'Fix token'})};?(s.indexOf('is not defined')>=0){^({cls:'A',reason:'reference_error',suggestion:'Check variable name'})};?(s.indexOf('is not a function')>=0){^({cls:'A',reason:'reference_error',suggestion:'Check function name'})};^(null)}
+
+!classifyB(errorText){;s=String(errorText).toLowerCase();?(s.indexOf('runtime')>=0){^({cls:'B',reason:'runtime_error',suggestion:'Manual investigation required'})};?(s.indexOf('segfault')>=0){^({cls:'B',reason:'runtime_error',suggestion:'Manual investigation required'})};?(s.indexOf('panic')>=0){^({cls:'B',reason:'runtime_error',suggestion:'Manual investigation required'})};^(null)}
+
+!classifyC(errorText){;s=String(errorText).toLowerCase();?(s.indexOf('architecture')>=0){^({cls:'C',reason:'architectural',suggestion:'Human review required'})};?(s.indexOf('circular')>=0){^({cls:'C',reason:'circular_dependency',suggestion:'Restructure modules'})};^(null)}
+
+!classifyError(errorText){;a=classifyA(errorText);?(a!=null){^a};b=classifyB(errorText);?(b!=null){^b};c=classifyC(errorText);?(c!=null){^c};^({cls:'B',reason:'unknown',suggestion:'Classify manually'})}
+
+!isCompilerBug(errorText){;s=String(errorText).toLowerCase();?(s.indexOf('unexpected token')>=0){^1};?(s.indexOf('lexer')>=0){^1};?(s.indexOf('parser')>=0){^1};?(s.indexOf('unexpected eof')>=0){^1};^0}
+
+!reproKey(errorText,source,stage){^({error:errorText,source:source||'',stage:stage||'parse'})}
+
+!minimizeCase(repro){^({reduced:repro.error,source:repro.source,stage:repro.stage,minimized:1})}
+
+!genPatch(repro,compilerFile){^({file:compilerFile||'src/compiler.mjs',hunk:repro.reduced,action:'fix',confidence:0.5})}
+
+!needsRegression(patch){^(patch.confidence<0.8)}
+
+!mkRepairResult(cls,reason,suggestion,patch,regression){^({cls:cls,reason:reason,suggestion:suggestion,patch:patch||null,regression:regression||null,applied:patch!=null})}
+
+!repair(errorText,source,stage,compilerFile){;cls=classifyError(errorText);?(isCompilerBug(errorText)){repro=reproKey(errorText,source,stage);mini=minimizeCase(repro);patch=genPatch(mini,compilerFile);reg=needsRegression(patch);^mkRepairResult('compiler',cls.reason,cls.suggestion,patch,reg)};^mkRepairResult(cls.cls,cls.reason,cls.suggestion,null,null)}
+
+!canAutoRepair(cls){^(cls.cls=='A')}
+
+!needsHuman(cls){^(cls.cls=='C')}
+
+=classifyError,classifyA,classifyB,classifyC,isCompilerBug,reproKey,minimizeCase,genPatch,needsRegression,mkRepairResult,repair,canAutoRepair,needsHuman

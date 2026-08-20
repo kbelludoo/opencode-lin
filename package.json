@@ -1,0 +1,22 @@
+{
+  "name": "opencode-lin",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "LIN Agent Layer plugin for OpenCode",
+  "main": "plugin.mjs",
+  "exports": {
+    ".": "./plugin.mjs",
+    "./lin/core": "./lin_core.lin",
+    "./lin/repair": "./lin_repair.lin",
+    "./lin/tools": "./lin_tools.lin"
+  },
+  "scripts": {
+    "test": "node test/plugin-smoke.mjs",
+    "lint": "echo 'no linter configured yet'"
+  },
+  "dependencies": {
+    "lin-lang": "file:../Downloads/lin-master"
+  },
+  "keywords": ["opencode", "plugin", "lin", "semantic", "verification", "agent"],
+  "license": "MIT"
+}

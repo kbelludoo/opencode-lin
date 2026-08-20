@@ -1,0 +1,23 @@
+@LIN:L1c:0.1
+^schema_once ^lossy=true ^ops=lin_tools
+~G{?=if #=for ^=ret :else}
+
+TARGET:{prefer:ts,require:ts}
+
+!isBlank(v){;?(v==null){^1};s=String(v);?(s==''||s=='undefined'||s=='null'){^1};^0}
+
+!toolLinIndex(workspace){;idx=mkIndex();^({tool:'lin_index',workspace:workspace,status:'indexed',index:idx})}
+
+!toolLinQuery(idx,name){;result=indexQuerySymbol(idx,name);?(result==null){^({tool:'lin_query',name:name,status:'not_found'})};^({tool:'lin_query',name:name,status:'found',occurrences:result})}
+
+!toolLinVerify(idx,workspace){;result=verifyIdx(idx);^({tool:'lin_verify',workspace:workspace,status:(result.ok?'ok':'drift'),ok:result.ok,drift:result.drift})}
+
+!toolLinCompile(target,modPath,idx){;result=compileTarget(target,modPath,idx);^({tool:'lin_compile',ok:result.ok,target:result.target,module:result.module,hash:result.hash,symbols:result.symbols,note:result.note,error:result.error})}
+
+!toolLinRepair(error,source,stage,compilerFile){;result=repair(error,source,stage,compilerFile);^({tool:'lin_repair',cls:result.cls,reason:result.reason,suggestion:result.suggestion,patch:result.patch,regression:result.regression,applied:result.applied})}
+
+!toolLinDiff(oldSrc,newSrc,oldPath,newPath){;result=semanticDiff(oldSrc,newSrc,oldPath,newPath);^({tool:'lin_diff',added:result.added,removed:result.removed,changed:result.changed})}
+
+!fullPipeline(workspace,files){;idx=mkIndex();#(i=0;i<files.length;i++){mod=mkModule(files[i].path,files[i].symbols||[],files[i].imports||[],files[i].effects||[],files[i].hash||'');indexAddModule(idx,mod)};st=stats(idx);vfy=verifyIdx(idx);^({tool:'lin_pipeline',workspace:workspace,modules:st.modules,symbols:st.symbols,effects:st.effects,verify_ok:vfy.ok,verify_drift:vfy.drift,index:idx})}
+
+=toolLinIndex,toolLinQuery,toolLinVerify,toolLinCompile,toolLinRepair,toolLinDiff,fullPipeline
