@@ -1,0 +1,73 @@
+{
+  "name": "lin-agent-layer",
+  "displayName": "LIN Agent Layer",
+  "description": "LIN semantic index, verify, compile, repair for AI coding agents",
+  "version": "0.1.0",
+  "publisher": "kbelludoo",
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "categories": ["Programming Languages", "Linters", "Other"],
+  "activationEvents": [
+    "onLanguage:typescript",
+    "onLanguage:javascript",
+    "onLanguage:python",
+    "onLanguage:go",
+    "onLanguage:rust",
+    "workspaceContains:**/*.lin"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "lin.index",
+        "title": "LIN: Build Semantic Index"
+      },
+      {
+        "command": "lin.verify",
+        "title": "LIN: Verify Integrity"
+      },
+      {
+        "command": "lin.query",
+        "title": "LIN: Query Symbol"
+      },
+      {
+        "command": "lin.compile",
+        "title": "LIN: Compile Module"
+      },
+      {
+        "command": "lin.repair",
+        "title": "LIN: Classify Error"
+      }
+    ],
+    "configuration": {
+      "title": "LIN Agent Layer",
+      "properties": {
+        "lin.target": {
+          "type": "string",
+          "default": "ts",
+          "enum": ["ts", "js", "py", "go", "rust", "c", "java", "zig", "cs"],
+          "description": "Default compilation target"
+        },
+        "lin.autoVerify": {
+          "type": "boolean",
+          "default": true,
+          "description": "Auto-verify after file edits"
+        },
+        "lin.linSrcPath": {
+          "type": "string",
+          "default": "",
+          "description": "Path to lin-master/src (auto-detected if empty)"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "build": "node esbuild.mjs",
+    "watch": "node esbuild.mjs --watch"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.90.0",
+    "esbuild": "^0.20.0"
+  }
+}

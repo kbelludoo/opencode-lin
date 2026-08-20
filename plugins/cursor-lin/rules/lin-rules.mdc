@@ -1,0 +1,16 @@
+---
+description: LIN Agent Layer rules for code quality and semantic integrity
+globs: ["**/*.lin", "**/*.ts", "**/*.js"]
+alwaysApply: false
+---
+
+# LIN Rules
+
+When working with LIN modules:
+
+1. Always run `verify` after editing `.lin` files to detect drift
+2. Use `repair` to classify errors before attempting manual fixes
+3. Use `query` and `deps` to understand code before modifying it
+4. Prefer `compile` with target `js` for runtime execution
+5. Default compilation target is `ts` unless otherwise specified
+6. Run `index` once per project before other operations

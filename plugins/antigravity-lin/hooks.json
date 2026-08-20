@@ -1,0 +1,16 @@
+{
+  "lin-verify": {
+    "PostToolUse": [
+      {
+        "matcher": "edit_file|write_file",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node ~/.config/lin-agent-layer/lin-verify-hook.mjs",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}

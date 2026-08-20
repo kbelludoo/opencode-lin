@@ -1,0 +1,7 @@
+name: hermes-lin
+version: 0.1.0
+description: "LIN Agent Layer for Hermes — semantic index, verify, compile, repair"
+hooks:
+  - post_tool_call
+  - pre_llm_call
+pip_dependencies: []
